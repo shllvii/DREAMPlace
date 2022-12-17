@@ -515,6 +515,8 @@ class NonLinearPlace(BasicPlace.BasicPlace):
                         if Llambda_stop_criterion(Lgamma_step, Llambda_density_weight_step, Llambda_metrics):
                             break
 
+
+
                         # for routability optimization
                         if (
                             params.routability_opt_flag
@@ -674,6 +676,8 @@ class NonLinearPlace(BasicPlace.BasicPlace):
             self.dump(params, placedb, self.pos[0].cpu(), "%s.dp.pklz" % (params.design_name()))
 
         # detailed placement
+
+        hpwl = 0
         if params.detailed_place_flag:
             tt = time.time()
             self.pos[0].data.copy_(self.op_collections.detailed_place_op(self.pos[0]))
@@ -682,6 +686,7 @@ class NonLinearPlace(BasicPlace.BasicPlace):
             all_metrics.append(cur_metric)
             cur_metric.evaluate(placedb, {"hpwl": self.op_collections.hpwl_op}, self.pos[0])
             logging.info(cur_metric)
+            hpwl = cur_metric.hpwl
             iteration += 1
 
         # save results
@@ -695,4 +700,35 @@ class NonLinearPlace(BasicPlace.BasicPlace):
         # plot placement
         if params.plot_flag:
             self.plot(params, placedb, iteration, cur_pos)
+
+        # evaluate congestion
+        def eval_cong():
+            def getCong(map):
+                overflows = np.sort(torch.flatten(map).cpu().detach().numpy())[::-1]
+                len = overflows.shape[0]
+                import math 
+                cuts = [int(math.ceil(len*i)) for i in [0.005, 0.01, 0.02, 0.05]]
+                print(f"shape is {map.shape}")
+                # print(f"len is {len}")
+                # print(f"cuts is {cuts}")
+                # print(f"overflows is {overflows}")
+                cong = np.mean([overflows[cut]-1 for cut in cuts])
+                return cong 
+
+            pos = self.pos[0]
+            route_utilization_map = model.op_collections.ml_congestion_map_op(pos)
+            return getCong(route_utilization_map)
+            # with open("cong.log", "w") as fcong:
+            #     fcong.write(f"{getCong(route_utilization_map)}\n")
+
+        def print_sHPWL():
+            cong = eval_cong()
+            shpwl = hpwl * (1 + 0.03 * 100 * cong)
+            print(f'hpwl is {hpwl}')
+            print(f'cong is {cong}')
+            print(f"sHPWL is {shpwl}")
+            with open("shpwl.log", "a+") as f:
+                f.write(f'{shpwl}\n')
+        
+        print_sHPWL()
         return all_metrics

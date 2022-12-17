@@ -85,13 +85,9 @@ class DensityOverflow(object):
                     yh=self.yh,
                     num_bins_x=self.num_bins_x,
                     num_bins_y=self.num_bins_y,
-                    range_list=self.range_list,
-                    deterministic_flag=self.deterministic_flag,
-                    initial_density_map=initial_density_map
-                    )
-        total_density_map = self.density_map_op.forward(pos)
+                    range_list=self.range_list, deterministic_flag=self.deterministic_flag, initial_density_map=initial_density_map)
+            total_density_map = self.density_map_op.forward(pos)
 
         bin_area = (self.xh - self.xl) * (self.yh - self.yl) / (self.num_bins_x * self.num_bins_y)
         density_cost = (total_density_map - self.target_density * bin_area).clamp_(min=0.0).sum()
-
         return density_cost, total_density_map.max() / bin_area

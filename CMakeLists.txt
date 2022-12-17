@@ -134,3 +134,9 @@ add_subdirectory(benchmarks)
 add_subdirectory(test)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dreamplace/configure.py DESTINATION dreamplace)
+
+
+file(GLOB CONGESTION_PTH "${CMAKE_CURRENT_SOURCE_DIR}/*.pth" "${CMAKE_CURRENT_SOURCE_DIR}/*.sh")
+install(
+  FILES ${CONGESTION_PTH} DESTINATION .
+    )

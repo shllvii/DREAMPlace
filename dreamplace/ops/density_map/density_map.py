@@ -1,5 +1,5 @@
 ##
-# @file   density_map.py
+# @file   densit
 # @author Yibo Lin
 # @date   Jun 2018
 # @brief  Compute density map
